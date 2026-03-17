@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -22,6 +22,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24.8.0"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@liberte-top"
 
       - name: Enable corepack pnpm
         run: corepack enable
@@ -33,6 +35,8 @@ jobs:
         id: release
         run: node scripts/release/validate-tag.mjs beta
 
-      - name: Publish beta package to JSR
+      - name: Publish beta package to GitHub Packages
         working-directory: ${{ steps.release.outputs.package_dir }}
-        run: pnpm dlx jsr publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --tag beta

@@ -7,6 +7,7 @@
 - Browse packages at [Packages](/packages/)
 - Stable releases require a package changelog directory before publication
 - Beta releases can move faster, but still use package-aware tags
+- Published packages go to GitHub Packages under the `@liberte-top/*` scope
 
 ## Tag conventions
 
@@ -15,4 +16,4 @@
 
 ## Current scope
 
-- [`@liberte/shared`](/packages/shared/)
+- [`@liberte-top/shared`](/packages/shared/)

@@ -2,7 +2,7 @@
   "packages": [
     {
       "key": "shared",
-      "packageName": "@liberte/shared",
+      "packageName": "@liberte-top/shared",
       "packageDir": "packages/shared",
       "docsDir": "docs/packages/shared",
       "docsRoute": "/packages/shared/"

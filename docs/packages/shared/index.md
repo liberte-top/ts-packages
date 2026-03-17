@@ -1,6 +1,6 @@
-# @liberte/shared
+# @liberte-top/shared
 
-`@liberte/shared` is the first package extracted into `ts-packages`.
+`@liberte-top/shared` is the first package extracted into `ts-packages`.
 
 ## Scope
 

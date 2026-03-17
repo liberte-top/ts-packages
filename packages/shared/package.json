@@ -1,8 +1,15 @@
 {
-  "name": "@liberte/shared",
+  "name": "@liberte-top/shared",
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liberte-top/ts-packages.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",

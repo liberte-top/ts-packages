@@ -4,4 +4,4 @@ This site groups documentation by package so each package can ship docs and chan
 
 ## Available packages
 
-- [`@liberte/shared`](/packages/shared/)
+- [`@liberte-top/shared`](/packages/shared/)
