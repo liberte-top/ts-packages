@@ -1,24 +1,38 @@
 import { ensure } from "../ensure/index";
 
-export type AuthSnapshot = {
+export type AuthActorContext<TPrincipalType extends string = string> = {
+  subject: string | null;
+  principalType: TPrincipalType | null;
+  email: string | null;
+};
+
+export type AuthSnapshot<
+  TPrincipalType extends string = string,
+  TAuthType extends string = string,
+  TScope extends string = string,
+> = {
   ready: boolean;
   authenticated: boolean;
   subject: string | null;
-  principalType: string | null;
+  principalType: TPrincipalType | null;
   email: string | null;
-  authType: string | null;
-  scopes: string[];
+  authType: TAuthType | null;
+  scopes: TScope[];
   etag: string | null;
   updatedAt: string | null;
 };
 
-export type AuthContext = {
+export type AuthContext<
+  TPrincipalType extends string = string,
+  TAuthType extends string = string,
+  TScope extends string = string,
+> = {
   authenticated: boolean;
   subject: string | null;
-  principalType: string | null;
+  principalType: TPrincipalType | null;
   email: string | null;
-  authType: string | null;
-  scopes: string[];
+  authType: TAuthType | null;
+  scopes: TScope[];
 };
 
 export type AuthScopeDefinition = {
@@ -34,6 +48,8 @@ export type CreateAuthOptions = {
   endpointPath?: string;
   fetchImpl?: typeof fetch;
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
+  onSnapshot?: (snapshot: AuthSnapshot) => void;
+  onError?: (error: unknown) => void;
 };
 
 export type UnauthorizedContext = {
@@ -58,6 +74,7 @@ export type AuthScopes = {
 
 export type AuthHandle = {
   refresh(): Promise<AuthSnapshot>;
+  reset(): AuthSnapshot;
   snapshot(): AuthSnapshot;
   scopes: AuthScopes;
 };
@@ -72,6 +89,7 @@ type AuthContextPayload = {
 };
 
 const DEFAULT_ENDPOINT_PATH = "/api/v1/context";
+const AUTH_FAILURE_STATUSES = new Set([401, 403]);
 
 function normalizeDomain(authDomain: string): string {
   if (/^https?:\/\//.test(authDomain)) {
@@ -105,7 +123,7 @@ function parseStoredSnapshot(raw: string | null): AuthSnapshot | null {
   }
 }
 
-function emptySnapshot(etag: string | null = null): AuthSnapshot {
+export function createEmptyAuthSnapshot(etag: string | null = null): AuthSnapshot {
   return {
     ready: false,
     authenticated: false,
@@ -117,6 +135,37 @@ function emptySnapshot(etag: string | null = null): AuthSnapshot {
     etag,
     updatedAt: null,
   };
+}
+
+export function toAuthActorContext(snapshot: AuthSnapshot): AuthActorContext {
+  return {
+    subject: snapshot.subject,
+    principalType: snapshot.principalType,
+    email: snapshot.email,
+  };
+}
+
+export function toAuthContext(snapshot: AuthSnapshot): AuthContext {
+  return {
+    authenticated: snapshot.authenticated,
+    subject: snapshot.subject,
+    principalType: snapshot.principalType,
+    email: snapshot.email,
+    authType: snapshot.authType,
+    scopes: snapshot.scopes,
+  };
+}
+
+export function resetAuthSnapshot(etag: string | null = null): AuthSnapshot {
+  return {
+    ...createEmptyAuthSnapshot(etag),
+    ready: true,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function isAuthFailureStatus(status: number): boolean {
+  return AUTH_FAILURE_STATUSES.has(status);
 }
 
 function defaultCurrentUrl() {
@@ -163,10 +212,17 @@ export function createAuth(options: CreateAuthOptions): AuthHandle {
   const storage = options.storage ?? globalThis.localStorage;
   const storageKey = options.storageKey ?? createStorageKey(options.authDomain);
 
-  let snapshot = parseStoredSnapshot(storage?.getItem(storageKey) ?? null) ?? emptySnapshot();
+  let snapshot = parseStoredSnapshot(storage?.getItem(storageKey) ?? null) ?? createEmptyAuthSnapshot();
 
   const persist = () => {
     storage?.setItem(storageKey, JSON.stringify(snapshot));
+    options.onSnapshot?.(snapshot);
+  };
+
+  const reset = (): AuthSnapshot => {
+    snapshot = resetAuthSnapshot();
+    persist();
+    return snapshot;
   };
 
   const scopes: AuthScopes = {
@@ -179,49 +235,59 @@ export function createAuth(options: CreateAuthOptions): AuthHandle {
   };
 
   const refresh = async (): Promise<AuthSnapshot> => {
-    const headers: Record<string, string> = {};
-    if (snapshot.etag) {
-      headers["If-None-Match"] = snapshot.etag;
-    }
+    try {
+      const headers: Record<string, string> = {};
+      if (snapshot.etag) {
+        headers["If-None-Match"] = snapshot.etag;
+      }
 
-    const response = await fetchImpl(`${authOrigin}${endpointPath}`, {
-      credentials: "include",
-      headers,
-    });
+      const response = await fetchImpl(`${authOrigin}${endpointPath}`, {
+        credentials: "include",
+        headers,
+      });
 
-    if (response.status === 304) {
+      if (response.status === 304) {
+        snapshot = {
+          ...snapshot,
+          ready: true,
+          updatedAt: new Date().toISOString(),
+        };
+        persist();
+        return snapshot;
+      }
+
+      if (isAuthFailureStatus(response.status)) {
+        return reset();
+      }
+
+      ensure(response.ok, () => new Error(`auth refresh failed: ${response.status}`));
+
+      const payload = (await response.json()) as AuthContextPayload;
+      const authenticated = payload.authenticated ?? Boolean(payload.subject);
       snapshot = {
-        ...snapshot,
         ready: true,
+        authenticated,
+        subject: authenticated ? payload.subject ?? null : null,
+        principalType: authenticated ? payload.principal_type ?? null : null,
+        email: authenticated ? payload.email ?? null : null,
+        authType: authenticated ? payload.auth_type ?? null : null,
+        scopes: authenticated ? payload.scopes ?? [] : [],
+        etag: response.headers.get("ETag"),
         updatedAt: new Date().toISOString(),
       };
       persist();
       return snapshot;
+    } catch (error) {
+      options.onError?.(error);
+      throw error;
     }
-
-    ensure(response.ok, () => new Error(`auth refresh failed: ${response.status}`));
-
-    const payload = (await response.json()) as AuthContextPayload;
-    const authenticated = payload.authenticated ?? Boolean(payload.subject);
-    snapshot = {
-      ready: true,
-      authenticated,
-      subject: authenticated ? payload.subject ?? null : null,
-      principalType: authenticated ? payload.principal_type ?? null : null,
-      email: authenticated ? payload.email ?? null : null,
-      authType: authenticated ? payload.auth_type ?? null : null,
-      scopes: authenticated ? payload.scopes ?? [] : [],
-      etag: response.headers.get("ETag"),
-      updatedAt: new Date().toISOString(),
-    };
-    persist();
-    return snapshot;
   };
 
   const getSnapshot = (): AuthSnapshot => snapshot;
 
   return {
     refresh,
+    reset,
     snapshot: getSnapshot,
     scopes,
   };
