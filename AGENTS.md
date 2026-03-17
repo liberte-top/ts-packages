@@ -72,11 +72,14 @@
 - For stable releases, first land the release branch through PR, including the manifest version bump and `docs/packages/<package-key>/changelogs/vX.Y.Z/`, then create the matching stable tag from the merged `main` commit.
 - After changing release rules, package naming, or docs structure, rerun the local validation path: `node scripts/release/validate-tag.mjs ...`, `pnpm docs:build`, and `npm publish --dry-run` from the package directory.
 - Treat GitHub Packages publishing and GitHub Pages deployment as part of the same release surface; a release is not done until both the package and docs workflows are green.
+- Do not treat a repo-local code fix as complete just because one consumer builds again. For shared-package changes, the iteration only closes after the package is released and at least one real consumer has upgraded to that released version and passed its own validation.
+- Prefer fixing shared-package ergonomics at the package boundary instead of normalizing one-off consumer workarounds. If a consumer needs a local shim purely to satisfy package typing or API shape, treat that as a package issue first.
 
 ## Release Checklist
 - Beta: update `packages/<package-dir>/package.json` to the exact `X.Y.Z-beta.N` version, validate locally, land via PR, tag `main` with `<package-key>/vX.Y.Z-beta.N`, then confirm both `release-beta.yml` and `docs-pages.yml` succeed.
 - Stable: update `packages/<package-dir>/package.json` to `X.Y.Z`, add `docs/packages/<package-key>/changelogs/vX.Y.Z/index.md`, validate locally, land via PR, tag the merged `main` commit with `<package-key>/vX.Y.Z`, then confirm both `release-stable.yml` and `docs-pages.yml` succeed.
 - After first publish of a new package, or after any registry/auth change, verify a real install using the scoped GitHub Packages config.
+- For package bug fixes or API ergonomics fixes, complete the full loop: reproduce in a real consumer, patch the package, release beta if needed, validate the consumer on the released package, then promote to stable only after consumer validation passes.
 
 ## Main Branch Rules
 - `main` is PR-only. Direct pushes are not part of the normal flow.
