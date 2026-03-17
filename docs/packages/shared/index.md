@@ -11,4 +11,5 @@
 
 ## Release notes
 
+- [Shared auth boundary](/packages/shared/auth)
 - [Changelogs](/packages/shared/changelogs/)
