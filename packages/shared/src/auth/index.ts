@@ -4,10 +4,28 @@ export type AuthSnapshot = {
   ready: boolean;
   authenticated: boolean;
   subject: string | null;
+  principalType: string | null;
+  email: string | null;
   authType: string | null;
   scopes: string[];
   etag: string | null;
   updatedAt: string | null;
+};
+
+export type AuthContext = {
+  authenticated: boolean;
+  subject: string | null;
+  principalType: string | null;
+  email: string | null;
+  authType: string | null;
+  scopes: string[];
+};
+
+export type AuthScopeDefinition = {
+  name: string;
+  label: string;
+  description: string;
+  grantedByDefault: boolean;
 };
 
 export type CreateAuthOptions = {
@@ -47,6 +65,8 @@ export type AuthHandle = {
 type AuthContextPayload = {
   authenticated?: boolean;
   subject?: string | null;
+  principal_type?: string | null;
+  email?: string | null;
   auth_type?: string | null;
   scopes?: string[];
 };
@@ -73,6 +93,8 @@ function parseStoredSnapshot(raw: string | null): AuthSnapshot | null {
       ready: Boolean(parsed.ready),
       authenticated: Boolean(parsed.authenticated),
       subject: parsed.subject ?? null,
+      principalType: parsed.principalType ?? null,
+      email: parsed.email ?? null,
       authType: parsed.authType ?? null,
       scopes: parsed.scopes,
       etag: parsed.etag ?? null,
@@ -88,6 +110,8 @@ function emptySnapshot(etag: string | null = null): AuthSnapshot {
     ready: false,
     authenticated: false,
     subject: null,
+    principalType: null,
+    email: null,
     authType: null,
     scopes: [],
     etag,
@@ -183,6 +207,8 @@ export function createAuth(options: CreateAuthOptions): AuthHandle {
       ready: true,
       authenticated,
       subject: authenticated ? payload.subject ?? null : null,
+      principalType: authenticated ? payload.principal_type ?? null : null,
+      email: authenticated ? payload.email ?? null : null,
       authType: authenticated ? payload.auth_type ?? null : null,
       scopes: authenticated ? payload.scopes ?? [] : [],
       etag: response.headers.get("ETag"),
