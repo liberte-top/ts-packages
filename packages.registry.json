@@ -1,6 +1,13 @@
 {
   "packages": [
     {
+      "key": "components",
+      "packageName": "@liberte-top/components",
+      "packageDir": "packages/components",
+      "docsDir": "docs/packages/components",
+      "docsRoute": "/packages/components/"
+    },
+    {
       "key": "shared",
       "packageName": "@liberte-top/shared",
       "packageDir": "packages/shared",
