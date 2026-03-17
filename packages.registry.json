@@ -1,0 +1,11 @@
+{
+  "packages": [
+    {
+      "key": "shared",
+      "packageName": "@liberte/shared",
+      "packageDir": "packages/shared",
+      "docsDir": "docs/packages/shared",
+      "docsRoute": "/packages/shared/"
+    }
+  ]
+}

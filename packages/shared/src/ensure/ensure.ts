@@ -1,5 +1,10 @@
 export type ErrorFactory = () => Error;
 export type FailureEffect = () => void;
+export type Ensure = {
+  (condition: unknown, createError: ErrorFactory, onFailure?: FailureEffect): asserts condition;
+  nonNull<T>(value: T | null | undefined, createError: ErrorFactory, onFailure?: FailureEffect): T;
+  nonEmpty<T extends string | readonly unknown[]>(value: T | null | undefined, createError: ErrorFactory, onFailure?: FailureEffect): T;
+};
 
 function runFailure(onFailure?: FailureEffect) {
   onFailure?.();
@@ -30,7 +35,7 @@ function nonEmpty<T extends string | readonly unknown[]>(value: T | null | undef
   return value;
 }
 
-export const ensure = Object.assign(ensureBase, {
+export const ensure: Ensure = Object.assign(ensureBase, {
   nonNull,
   nonEmpty,
 });

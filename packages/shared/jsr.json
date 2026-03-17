@@ -2,7 +2,6 @@
   "name": "@liberte/shared",
   "version": "0.0.1-beta.1",
   "license": "MIT",
-  "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",

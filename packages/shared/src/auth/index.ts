@@ -31,6 +31,19 @@ export type CreateUnauthorizedRedirectHandlerOptions = {
   returnToParam?: string;
 };
 
+export type UnauthorizedRedirectHandler = (context: UnauthorizedContext) => boolean;
+
+export type AuthScopes = {
+  any(required: string[]): boolean;
+  all(required: string[]): boolean;
+};
+
+export type AuthHandle = {
+  refresh(): Promise<AuthSnapshot>;
+  snapshot(): AuthSnapshot;
+  scopes: AuthScopes;
+};
+
 type AuthContextPayload = {
   authenticated?: boolean;
   subject?: string | null;
@@ -102,7 +115,7 @@ export function buildLoginRedirectUrl(loginUrl: string, currentUrl: string, retu
   return target.toString();
 }
 
-export function createUnauthorizedRedirectHandler(options: CreateUnauthorizedRedirectHandlerOptions) {
+export function createUnauthorizedRedirectHandler(options: CreateUnauthorizedRedirectHandlerOptions): UnauthorizedRedirectHandler {
   const currentUrl = options.currentUrl ?? defaultCurrentUrl;
   const navigate = options.navigate ?? defaultNavigate;
   const returnToParam = options.returnToParam ?? "return_to";
@@ -119,7 +132,7 @@ export function createUnauthorizedRedirectHandler(options: CreateUnauthorizedRed
   };
 }
 
-export function createAuth(options: CreateAuthOptions) {
+export function createAuth(options: CreateAuthOptions): AuthHandle {
   const authOrigin = normalizeDomain(options.authDomain);
   const endpointPath = options.endpointPath ?? DEFAULT_ENDPOINT_PATH;
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -132,7 +145,7 @@ export function createAuth(options: CreateAuthOptions) {
     storage?.setItem(storageKey, JSON.stringify(snapshot));
   };
 
-  const scopes = {
+  const scopes: AuthScopes = {
     any(required: string[]) {
       return required.some((scope) => snapshot.scopes.includes(scope));
     },
@@ -141,7 +154,7 @@ export function createAuth(options: CreateAuthOptions) {
     },
   };
 
-  const refresh = async () => {
+  const refresh = async (): Promise<AuthSnapshot> => {
     const headers: Record<string, string> = {};
     if (snapshot.etag) {
       headers["If-None-Match"] = snapshot.etag;
@@ -179,7 +192,7 @@ export function createAuth(options: CreateAuthOptions) {
     return snapshot;
   };
 
-  const getSnapshot = () => snapshot;
+  const getSnapshot = (): AuthSnapshot => snapshot;
 
   return {
     refresh,
