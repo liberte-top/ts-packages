@@ -4,6 +4,7 @@ TypeScript package repository for `liberte-top`.
 
 Current scope:
 
+- `@liberte-top/components`
 - `@liberte-top/shared`
 
 Release tags:

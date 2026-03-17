@@ -16,4 +16,5 @@
 
 ## Current scope
 
+- [`@liberte-top/components`](/packages/components/)
 - [`@liberte-top/shared`](/packages/shared/)

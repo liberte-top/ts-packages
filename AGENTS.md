@@ -6,6 +6,7 @@
 - Package distribution is an outcome, not the defining purpose of the repository.
 
 ## Current Scope
+- `@liberte-top/components` is the shared Svelte component package for web consumers.
 - The initial migration target is `@liberte-top/shared`.
 - Add more packages only after the release and consumption flow is proven with `shared`.
 
@@ -13,6 +14,7 @@
 - Keep this repo focused on TypeScript package source, versioning, and publishing.
 - Do not add service-specific application code, deployment manifests, or infra logic here.
 - Prefer runtime-neutral primitives over app-specific glue.
+- Framework-specific shared packages are acceptable when they are durable cross-repo building blocks, not app-local UI code.
 
 ## Directory Layout
 - `packages/` contains the publishable packages; each package owns its own `package.json` and source tree.
@@ -34,10 +36,11 @@
 - Only add abstractions after they are proven in consuming apps.
 - Prefer contract-first and transport-neutral patterns.
 - Keep packages TS-first and avoid speculative build layers.
+- Svelte packages may publish source-first exports when the consuming apps are already Svelte-native and the source contract is intentional.
 
 ## Release Principle
 - `shared` is the first package to run through the full independent release chain.
-- Other packages should not move here until the `shared` migration is stable.
+- `components` is the second migration target now that `shared` release and consumption flow is stable.
 
 ## Distribution Principle
 - Prefer GitHub Packages release plumbing for TS packages here.
@@ -84,6 +87,8 @@
 ## Consumption
 - Consumers must configure `@liberte-top` to use `https://npm.pkg.github.com`.
 - Consumers need an auth token with package read access for installs.
+- Treat a machine-level `~/.npmrc` with registry mapping and a long-lived read token as the default local developer setup; do not commit per-repo `.npmrc` files just to consume these packages.
+- Do not rely on ad hoc `gh auth token` shell substitutions for normal package installs.
 - Minimal `.npmrc` shape:
   - `@liberte-top:registry=https://npm.pkg.github.com`
   - `//npm.pkg.github.com/:_authToken=<token>`
