@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+  pull_request: {}
+
+jobs:
+  build-shared:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.8.0"
+
+      - name: Enable corepack pnpm
+        run: corepack enable
+
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Pack shared package
+        run: pnpm --dir packages/shared pack --pack-destination /tmp/ts-packages-dist
